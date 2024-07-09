@@ -13,7 +13,7 @@ from datetime import datetime
 from schedule_model import ScheduleModel
 from PIL import Image
 from PIL.ExifTags import TAGS , GPSTAGS
-from mysql.connector import Error
+from mysql.connector import Error #1234
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5 import uic
@@ -132,8 +132,8 @@ class WindowClass(QMainWindow, form_class) :
         self.tableView_todo.setColumnWidth(0, 100)
         self.tableView_todo.setColumnWidth(1, 100)
         self.tableView_todo.setColumnWidth(2, 100)
-        self.tableView_todo.setColumnWidth(3, 200)
-        self.tableView_todo.setColumnWidth(4, 200)  
+        self.tableView_todo.setColumnWidth(3, 150)
+        self.tableView_todo.setColumnWidth(4, 150)  
         self.tableView_todo.setColumnWidth(5, 80)  # 삭제 버튼용
         
         # START 클릭시 타이머 시작
@@ -369,6 +369,9 @@ class WindowClass(QMainWindow, form_class) :
         selected_drive = self.drive_combo_dst.currentText()
         self.treeView_dst.setRootIndex(self.model_dst.index(selected_drive))
     
+    def validate_schedule(self, add_type1 , add_type2 , time , dir):
+        print("Validate save information")
+
     # save schedules    
     def save_setting(self):
         
@@ -414,15 +417,25 @@ class WindowClass(QMainWindow, form_class) :
             QMessageBox.warning(self, "Over Max Schedule", "You can save up to three schedules.")
             return
         
+
+        save_time = self.timeEdit.time().toString()
+        save_src_dir = self.model_tgt.filePath(index1)
+        save_tgt_dir = self.model_tgt.filePath(index2)
+
         # 저장데이타
         new_entry = {
                     "Type1": type1 , 
                     "Type2": type2 , 
-                    "time": self.timeEdit.time().toString() , 
-                    "Source Path":self.model_tgt.filePath(index1),
-                    "Target Path":self.model_dst.filePath(index2),
+                    "time": save_time, 
+                    "Source Path":save_src_dir,
+                    "Target Path":save_tgt_dir,
                    }
-        
+        # 중복입력 체크 : TODO Type1 별로 나눠야됨
+        for valid in data:
+            if valid['Type1'] == type1 and valid['Type2'] == type2  and valid['time'] == save_time and valid['Source Path'] == save_src_dir and valid['Target Path'] == save_tgt_dir :
+                return False
+            
+
         # "settings" 키에 새로운 항목 추가
         data["settings"].append(new_entry)
         
@@ -458,8 +471,29 @@ class WindowClass(QMainWindow, form_class) :
         
         self.model = PandasModel(df)
         self.tableView_todo.setModel(self.model)
+
+
+        # Index Widget을 사용하여 버튼 추가
+        for row in range(self.model.rowCount()):
+            btn_delete = QPushButton('Delete', self)
+            btn_delete.clicked.connect(lambda ch, row=row: self.delete_row(row))
+            self.tableView_todo.setIndexWidget(self.model.index(row, df.shape[1]), btn_delete)
+
+        # 컬럼 크기 조정
+        self.tableView_todo.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+
+        '''
+        # Index Widget을 사용하여 버튼 추가
+        btn_delete = QPushButton('Delete', self)
+        #btn_delete.clicked.connect(self.button_clicked)
+
+        row_count = self.model.rowCount()
+
+        #print(f' >>>>> row cnt : {self.model.index(row_count, 1)}')
+        #self.tableView_todo.setIndexWidget(self.model.index(row_count, 4), btn_delete)
         ### 
-      
+        '''      
                 
                             
     def add_row(self, schedule, time):
@@ -496,26 +530,37 @@ class PandasModel(QAbstractTableModel):
     def __init__(self, data):
         QAbstractTableModel.__init__(self)
         self._data = data
+       
 
     def rowCount(self, parent=None):
         return self._data.shape[0]
 
     def columnCount(self, parent=None):
-        return self._data.shape[1]
+        return self._data.shape[1] + 1
 
     def data(self, index, role=Qt.DisplayRole):
-        if index.isValid():
-            if role == Qt.DisplayRole:
-                return str(self._data.iloc[index.row(), index.column()])
+        if not index.isValid():
+            return None
+        if role == Qt.DisplayRole:
+            if index.column() < self._data.shape[1]:
+                return str(self._data.iat[index.row(), index.column()])
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                return self._data.columns[section]
-            if orientation == Qt.Vertical:
-                return self._data.index[section]
+                if section < self._data.shape[1]:
+                    return str(self._data.columns[section])
+                elif section == self._data.shape[1]:
+                    return "Action"
+            elif orientation == Qt.Vertical:
+                return str(section)
         return None
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+        return Qt.ItemFlags(QAbstractTableModel.flags(self, index))
 
 
 if __name__ == "__main__" :

@@ -104,6 +104,7 @@
    <property name="font">
     <font>
      <pointsize>12</pointsize>
+     <weight>50</weight>
      <bold>false</bold>
     </font>
    </property>
@@ -129,7 +130,7 @@
    <widget class="QPushButton" name="btn_save">
     <property name="geometry">
      <rect>
-      <x>420</x>
+      <x>340</x>
       <y>30</y>
       <width>75</width>
       <height>24</height>
@@ -140,6 +141,9 @@
       <horstretch>0</horstretch>
       <verstretch>0</verstretch>
      </sizepolicy>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: green; color: white; font-weight: bold;</string>
     </property>
     <property name="text">
      <string>SAVE</string>
@@ -198,13 +202,16 @@
     <property name="geometry">
      <rect>
       <x>420</x>
-      <y>60</y>
-      <width>75</width>
+      <y>30</y>
+      <width>91</width>
       <height>24</height>
      </rect>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: gray; color: white; font-weight: bold;</string>
+    </property>
     <property name="text">
-     <string>test COPY</string>
+     <string>Backup Now</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_time">
@@ -394,12 +401,30 @@
        </colorrole>
       </inactive>
       <disabled>
+       <colorrole role="WindowText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>120</red>
+          <green>120</green>
+          <blue>120</blue>
+         </color>
+        </brush>
+       </colorrole>
        <colorrole role="Button">
         <brush brushstyle="SolidPattern">
          <color alpha="255">
           <red>0</red>
           <green>0</green>
           <blue>0</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Text">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>120</red>
+          <green>120</green>
+          <blue>120</blue>
          </color>
         </brush>
        </colorrole>
@@ -427,6 +452,7 @@
     <property name="font">
      <font>
       <family>Arial Black</family>
+      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
