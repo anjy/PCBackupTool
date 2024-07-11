@@ -183,6 +183,17 @@ class WindowClass(QMainWindow, form_class) :
     
     # START 버튼 클릭시 타이머 Start
     def start_timer(self):
+
+        if not self.jsonData["settings"] is None:
+            if len(self.jsonData["settings"]) == 0:
+                self.label_running.setText('No Schedule')
+                self.label_running.setStyleSheet('background-color: rgba(255, 255, 255, 0);')
+                return
+        else:
+            self.label_running.setText('No Schedule')
+            self.label_running.setStyleSheet('background-color: rgba(255, 255, 255, 0);')
+            return
+
         if not self.timer_started:
             self.timer.start(1000) # 1초마다 체크
             self.timer_started = True

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -19,7 +19,7 @@
   <property name="maximumSize">
    <size>
     <width>800</width>
-    <height>600</height>
+    <height>800</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -63,11 +63,14 @@
      <x>20</x>
      <y>390</y>
      <width>761</width>
-     <height>201</height>
+     <height>151</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true"> font-weight: bold</string>
+   </property>
    <property name="title">
-    <string>TODO</string>
+    <string>Saved Schedule</string>
    </property>
    <widget class="QTableView" name="tableView_todo">
     <property name="geometry">
@@ -75,8 +78,11 @@
       <x>10</x>
       <y>20</y>
       <width>741</width>
-      <height>150</height>
+      <height>116</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"> font-weight: normal</string>
     </property>
     <property name="iconSize">
      <size>
@@ -123,6 +129,9 @@
      <width>521</width>
      <height>81</height>
     </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"> font-weight: bold</string>
    </property>
    <property name="title">
     <string>Set Scheduler</string>
@@ -257,6 +266,9 @@
      <height>80</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true"> font-weight: bold</string>
+   </property>
    <property name="title">
     <string>Run&amp;Stop</string>
    </property>
@@ -318,6 +330,9 @@
      <height>80</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true"> font-weight: bold</string>
+   </property>
    <property name="title">
     <string>Status</string>
    </property>
@@ -342,6 +357,47 @@
     <property name="margin">
      <number>10</number>
     </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_5">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>550</y>
+     <width>761</width>
+     <height>151</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"> font-weight: bold</string>
+   </property>
+   <property name="title">
+    <string>LOG</string>
+   </property>
+   <widget class="QTableView" name="tableView_log">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>741</width>
+      <height>116</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"> font-weight: normal</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>10</width>
+      <height>10</height>
+     </size>
+    </property>
+    <property name="gridStyle">
+     <enum>Qt::SolidLine</enum>
+    </property>
+    <attribute name="horizontalHeaderDefaultSectionSize">
+     <number>150</number>
+    </attribute>
    </widget>
   </widget>
  </widget>
