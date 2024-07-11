@@ -1,11 +1,3 @@
 {
-    "settings": [
-        {
-            "Type1": "Every Hour",
-            "Type2": "",
-            "time": "00:45:00",
-            "Source Path": "C:/pythonPjt/workspace/PCBackupTool",
-            "Target Path": "D:/_백업"
-        }
-    ]
+    "settings": []
 }

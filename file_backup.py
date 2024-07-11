@@ -35,6 +35,7 @@ class WindowClass(QMainWindow, form_class) :
         self.fontSize = 10
         self.counter = 0
         self.maxSchedule = 3 # 최대 저장 스케쥴수 
+
         
         self.settings_file = "settings.json"
         self.comb_1.addItems(["Select","Every Hour","Every Day","Every Week"])
@@ -186,6 +187,10 @@ class WindowClass(QMainWindow, form_class) :
             self.timer.start(1000) # 1초마다 체크
             self.timer_started = True
             self.btn_get_status.setEnabled(False) # START 버튼 비활성화
+            
+            self.label_running.setText('Running')
+            self.label_running.setStyleSheet('background-color: rgba(57, 234, 86, 1);')
+            
             QMessageBox.warning(self, "Warning", "Started Timer.")
      
     # STOP 버튼 클릭시 타이머 stop       
@@ -194,8 +199,15 @@ class WindowClass(QMainWindow, form_class) :
             self.timer.stop()
             self.timer_started = False
             self.btn_get_status.setEnabled(True) # START 버튼 활성화
+
+            self.label_running.setText('STOP')
+            self.label_running.setStyleSheet('background-color: rgba(255, 255, 255, 0);')
+
             QMessageBox.warning(self, "Warning", "Stop Timer.")
-            
+
+
+   
+
     def check_time(self):
         '''
         import string
@@ -205,8 +217,11 @@ class WindowClass(QMainWindow, form_class) :
         print(f'check_time : {result_str}')
         '''
         self.counter += 1
-        self.lcd_timer.display(self.counter)
-        
+        #self.lcd_timer.display(self.counter)
+
+
+       
+        # self.update_progress() # 프로그램이 START 된것 보여 주기위한 progress bar 실제 작업 진행관 상관없음
         '''
         current_time = datetime.now().strftime("%H:%M:%S")
 
