@@ -88,8 +88,11 @@ class WindowClass(QMainWindow, form_class) :
         self.drive_combo_dst.addItems(self.get_drives())
         self.drive_combo_dst.currentIndexChanged.connect(self.update_tree_dst_view)
         
-        # 복사버튼
-        self.btn_copy.clicked.connect(self.copy_item)
+        # Backup now 
+        self.btn_copy.clicked.connect(self.copy_now)
+
+        # New Dir
+        self.btn_create_dir.clicked.connect(self.add_folder)
         
         # 트레이아이콘
         # System Tray
@@ -237,7 +240,7 @@ class WindowClass(QMainWindow, form_class) :
             
             
             if "Hour" in setting["Type1"]:
-                print(f"####{current_minute}/{setting_minute}")
+                
                 # 매시간 분 비교
                 if current_minute == setting_minute:
                     self.copy_item(setting_source_dir,setting_target_dir)
@@ -281,17 +284,32 @@ class WindowClass(QMainWindow, form_class) :
             QSystemTrayIcon.Information,
             2000
         )  
-        
+    # event : Backup now 
+    def copy_now(self):
+        source_index = self.treeView_tgt.currentIndex()
+        target_index = self.treeView_dst.currentIndex()
+
+        # Validate to select the target directory
+        if not source_index.isValid() or not target_index.isValid():
+            QMessageBox.warning(self, "No Selection", "Source and Target directory must be selected")
+            return
+
+        source_dir = self.model_tgt.filePath(source_index)
+        target_dir = self.model_tgt.filePath(target_index)
+
+        self.copy_item(source_dir , target_dir)
+
     # 파일 백업         
     def copy_item(self , source_path ,target_path ) :
-        
+
+        print(f"src : {source_path} , tgt :{target_path}")
 
         if not source_path or not target_path:
             QMessageBox.warning(self, "Warning", "Please select a source file/folder and a destination folder.")
             return
 
         
-        zip_filename = os.path.join(target_path, f"backup_{datetime.now().strftime('%Y%m%d%H%M%S')}.zip")
+        #zip_filename = os.path.join(target_path, f"backup_{datetime.now().strftime('%Y%m%d%H%M%S')}.zip")
         '''
         # 압축 : 다만 이경우 다른 프로세스가 사용중이라고 하고 빈파일만 생김(permission 오류 발생)
         try:
@@ -431,10 +449,11 @@ class WindowClass(QMainWindow, form_class) :
                     "Target Path":save_tgt_dir,
                    }
         # 중복입력 체크 : TODO Type1 별로 나눠야됨
+        '''
         for valid in data:
             if valid['Type1'] == type1 and valid['Type2'] == type2  and valid['time'] == save_time and valid['Source Path'] == save_src_dir and valid['Target Path'] == save_tgt_dir :
                 return False
-            
+        '''    
 
         # "settings" 키에 새로운 항목 추가
         data["settings"].append(new_entry)
@@ -476,26 +495,42 @@ class WindowClass(QMainWindow, form_class) :
         # Index Widget을 사용하여 버튼 추가
         for row in range(self.model.rowCount()):
             btn_delete = QPushButton('Delete', self)
-            btn_delete.clicked.connect(lambda ch, row=row: self.delete_row(row))
+            btn_delete.clicked.connect(lambda ch, row=row: self.confirm_delete(row))
             self.tableView_todo.setIndexWidget(self.model.index(row, df.shape[1]), btn_delete)
 
         # 컬럼 크기 조정
         self.tableView_todo.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
+    # Create a directory for the target tree view.
+    def add_folder(self):
+        index = self.treeView_dst.currentIndex()
+        if not index.isValid():
+            QMessageBox.warning(self, 'Warning', 'Please select a directory first.')
+            return
+        
+        dir_path = self.model_dst.filePath(index)
+        if not os.path.isdir(dir_path):
+            QMessageBox.warning(self, 'Warning', 'Please select a directory.')
+            return
+        
+        folder_name, ok = QInputDialog.getText(self, 'Add Folder', 'Enter folder name:')
+        if ok and folder_name:
+            new_folder_path = os.path.join(dir_path, folder_name)
+            try:
+                os.mkdir(new_folder_path)
+                QMessageBox.information(self, 'Success', f'Folder "{folder_name}" created successfully.')
+            except Exception as e:
+                QMessageBox.critical(self, 'Error', f'Failed to create folder: {str(e)}')
 
-        '''
-        # Index Widget을 사용하여 버튼 추가
-        btn_delete = QPushButton('Delete', self)
-        #btn_delete.clicked.connect(self.button_clicked)
+    # confirm Delete 
+    def confirm_delete(self,row):
+        replay = QMessageBox.question(self, 'Message', 'Are you sure you want to delete?',  QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel)
 
-        row_count = self.model.rowCount()
+        if replay == QMessageBox.Ok :
+            self.delete_row(row)
 
-        #print(f' >>>>> row cnt : {self.model.index(row_count, 1)}')
-        #self.tableView_todo.setIndexWidget(self.model.index(row_count, 4), btn_delete)
-        ### 
-        '''      
                 
-                            
+    # add the schedule row                      
     def add_row(self, schedule, time):
         schedule_item = QStandardItem(schedule) # key
         time_item = QStandardItem(time) # value
@@ -505,11 +540,20 @@ class WindowClass(QMainWindow, form_class) :
       
         row = [schedule_item, time_item]
         for col, item in enumerate(row):
-            print(f'>>>{self.model.rowCount()} ')
             self.model.setItem(self.model.rowCount(), col, item)
-      
-    def delete_row(self,schedule):
-        print("delete")      
+
+    # delete the schedule row  
+    def delete_row(self,row):
+        print("delete")   
+
+        # 해당 row 삭제
+        del self.jsonData["settings"][row]
+
+        # json 저장
+        with open(self.settings_file,'w',encoding='utf-8') as file:
+            json.dump(self.jsonData,file,ensure_ascii=False,indent=4)
+
+        self.load_settings()
     
     # 프로그램 시작시 자동 실행 이벤트
     def showEvent(self, event):

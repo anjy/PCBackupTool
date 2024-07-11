@@ -130,9 +130,9 @@
    <widget class="QPushButton" name="btn_save">
     <property name="geometry">
      <rect>
-      <x>340</x>
-      <y>30</y>
-      <width>75</width>
+      <x>390</x>
+      <y>18</y>
+      <width>110</width>
       <height>24</height>
      </rect>
     </property>
@@ -201,9 +201,9 @@
    <widget class="QPushButton" name="btn_copy">
     <property name="geometry">
      <rect>
-      <x>420</x>
-      <y>30</y>
-      <width>91</width>
+      <x>390</x>
+      <y>48</y>
+      <width>110</width>
       <height>24</height>
      </rect>
     </property>
@@ -460,6 +460,19 @@
      <string notr="true">background-color: black; font-color: green; font-weight: bold;</string>
     </property>
    </widget>
+  </widget>
+  <widget class="QPushButton" name="btn_create_dir">
+   <property name="geometry">
+    <rect>
+     <x>700</x>
+     <y>20</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>New Dir</string>
+   </property>
   </widget>
  </widget>
  <resources/>

@@ -3,23 +3,9 @@
         {
             "Type1": "Every Hour",
             "Type2": "",
-            "time": "00:57:00",
-            "Source Path": "C:/pythonUi",
-            "Target Path": "D:/복사테스트"
-        },
-        {
-            "Type1": "Every Day",
-            "Type2": "",
-            "time": "18:54:00",
-            "Source Path": "C:/pythonUi",
-            "Target Path": "D:/복사테스트"
-        },
-        {
-            "Type1": "Every Week",
-            "Type2": "Mon",
-            "time": "11:00:00",
-            "Source Path": "C:/pythonUi",
-            "Target Path": "D:/복사테스트"
+            "time": "00:45:00",
+            "Source Path": "C:/pythonPjt/workspace/PCBackupTool",
+            "Target Path": "D:/_백업"
         }
     ]
 }
