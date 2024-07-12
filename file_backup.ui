@@ -400,6 +400,19 @@
     </attribute>
    </widget>
   </widget>
+  <widget class="QPushButton" name="pushButton">
+   <property name="geometry">
+    <rect>
+     <x>684</x>
+     <y>710</y>
+     <width>91</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Delete Log</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
