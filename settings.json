@@ -1,25 +1,3 @@
 {
-    "settings": [
-        {
-            "Type1": "Every Hour",
-            "Type2": "",
-            "time": "00:00:00",
-            "Source Path": "C:/Python312",
-            "Target Path": "D:/_백업/aaa/bbbbb"
-        },
-        {
-            "Type1": "Every Hour",
-            "Type2": "",
-            "time": "00:00:00",
-            "Source Path": "C:/Python312",
-            "Target Path": "D:/_백업/aaa/bbbbb"
-        },
-        {
-            "Type1": "Every Hour",
-            "Type2": "",
-            "time": "00:00:00",
-            "Source Path": "C:/Python312",
-            "Target Path": "D:/_백업/aaa/bbbbb"
-        }
-    ]
+    "settings": []
 }

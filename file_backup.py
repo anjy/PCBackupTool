@@ -9,6 +9,9 @@ import psutil
 import shutil
 import zipfile
 import json
+import queue
+import threading
+import time
 from datetime import datetime
 from schedule_model import ScheduleModel
 from PIL import Image
@@ -22,19 +25,29 @@ from PyQt5.QtCore import QTimer
 from bs4 import BeautifulSoup
 from PyQt5.QtWidgets  import QApplication , QMainWindow , QVBoxLayout , QWidget , QPushButton, QFileDialog, QTableWidget, QTableWidgetItem 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QAbstractTableModel, Qt
+from PyQt5.QtCore import QAbstractTableModel, Qt , QThread , pyqtSignal
 #UI파일 연결
 #단, UI파일은 Python 코드 파일과 같은 디렉토리에 위치해야한다.
 form_class = uic.loadUiType("file_backup.ui")[0]
 
 #화면을 띄우는데 사용되는 Class 선언
 class WindowClass(QMainWindow, form_class) :
+
+    # signal
+    progress = pyqtSignal(str, str)  # 작업 로그와 시간을 보낼 시그널
+    finished = pyqtSignal(str, str, float)  # 메시지, 시간, 걸린 시간을 보낼 시그널
+
     def __init__(self) :
         super().__init__()
         self.setupUi(self)
         self.fontSize = 10
         self.counter = 0
         self.maxSchedule = 3 # 최대 저장 스케쥴수 
+
+        # 작업용 큐
+        self.file_queue = queue.Queue()
+        self.threads = []  # 스레드 리스트 초기화
+        self.num_worker_threads = 2
 
         
         self.settings_file = "settings.json"
@@ -140,6 +153,16 @@ class WindowClass(QMainWindow, form_class) :
         self.tableView_todo.setColumnWidth(4, 150)  
         self.tableView_todo.setColumnWidth(5, 80)  # 삭제 버튼용
         
+        # LOG Model
+        # 테이블 모델 설정
+        self.model_log = QStandardItemModel()
+        self.model_log.setHorizontalHeaderLabels(['Timestamp', 'Message', 'Elapsed Time (s)'])
+        self.tableView_log.setModel(self.model_log)
+
+        self.tableView_log.setColumnWidth(0, 200)
+        self.tableView_log.setColumnWidth(1, 200)
+        self.tableView_log.setColumnWidth(2, 200)
+
         # START 클릭시 타이머 시작
         self.btn_get_status.clicked.connect(self.start_timer)
         
@@ -294,7 +317,7 @@ class WindowClass(QMainWindow, form_class) :
             else:
                 print('Not Matched Schedule')
                   
-    # 정상 크기로 복원
+    # 창을 정상 크기로 복원
     def on_tray_icon_activated(self, reason):
         """ Handle tray icon activation event """
         if reason == QSystemTrayIcon.Trigger:
@@ -310,6 +333,45 @@ class WindowClass(QMainWindow, form_class) :
             QSystemTrayIcon.Information,
             2000
         )  
+
+    def update_log(self, message, timestamp):
+        self.model_log.appendRow([
+            QStandardItem(timestamp),
+            QStandardItem(message),
+            QStandardItem("")  # 빈 값으로 초기화
+        ])
+        # 자동으로 마지막 행으로 스크롤
+        self.tableView_log.scrollToBottom()
+
+    def on_finished(self, message, timestamp, elapsed_time):
+        self.model_log.appendRow([
+            QStandardItem(timestamp),
+            QStandardItem(message),
+            QStandardItem(f"{elapsed_time:.2f}")
+        ])
+        self.btn_copy.setEnabled(True)
+
+    # start thread
+    def start_threads(self):
+        self.threds = []
+        for i in range(self.num_worker_threads):
+            t = threading.Thread(target=self.copy_item)
+            t.start()
+            self.threads.append(t)  
+        self.progress.connect(self.update_log)
+        self.finished.connect(self.on_finished)
+        self.btn_copy.setEnabled(False)
+        print(' 스레드가 시작되었습니다.')  
+
+    # stop thread
+    def stop_threds(self):
+        # 작업자 스레드 종료
+        for i in range(self.num_worker_threads):
+            self.file_queue.put(None)
+        for t in self.threads:
+            t.join()
+        print('모든 작업자 스레드가 종료되었습니다.')        
+
     # event : Backup now 
     def copy_now(self):
         source_index = self.treeView_tgt.currentIndex()
@@ -323,68 +385,82 @@ class WindowClass(QMainWindow, form_class) :
         source_dir = self.model_tgt.filePath(source_index)
         target_dir = self.model_tgt.filePath(target_index)
 
-        self.copy_item(source_dir , target_dir)
+        
+        # start thread
+        self.start_threads()
+       
+        # 큐에 작업 추가
+        self.file_queue.put((source_dir, target_dir))
+        print('작업이 큐에 추가되었습니다.')
+        
+        self.file_queue.join()
+        print('모든 큐 작업이 완료되었습니다.')
+
+        #self.copy_item(source_dir , target_dir)
+
+        # stop thread
+        self.stop_threds()
+        
+    def show_warning(self, message):
+        def _show():
+            QMessageBox.warning(self, "Warning", message)
+        QApplication.instance().postEvent(self, _show)
 
     # 파일 백업         
-    def copy_item(self , source_path ,target_path ) :
-
-        print(f"src : {source_path} , tgt :{target_path}")
-
-        if not source_path or not target_path:
-            QMessageBox.warning(self, "Warning", "Please select a source file/folder and a destination folder.")
-            return
-
+   
+    
+    def copy_item(self):
         
-        #zip_filename = os.path.join(target_path, f"backup_{datetime.now().strftime('%Y%m%d%H%M%S')}.zip")
-        '''
-        # 압축 : 다만 이경우 다른 프로세스가 사용중이라고 하고 빈파일만 생김(permission 오류 발생)
-        try:
-             # Create Zip file
-            with zipfile.ZipFile(zip_filename, 'w') as zipf:
-                for filename in os.listdir(source_path):
-                    source_file = os.path.join(source_path, filename)
-                    if os.path.isfile(source_file):
-                        zipf.write(source_file, os.path.basename(source_file))
-                        print(f"File '{filename}' added to the zip file.")
+        # 작업 시작 시간 기록
+        start_time = time.time()
+        self.progress.emit("백업 중...", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-            print(f"Zip file '{os.path.basename(zip_filename)}' created.")
-            
-           # Copy the zip file to the target directory
+        while True:
+            item = self.file_queue.get()
+            if item is None:
+                self.file_queue.task_done()
+                break
+
+            source_path, target_path = item
+            print(f"src : {source_path} , tgt :{target_path}")
+
+            if not source_path or not target_path:
+                self.finished.emit("Please select a source file/folder and a destination folder.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 0.0)
+                return
+
             try:
-                shutil.copy2(zip_filename, os.path.join(target_path, os.path.basename(zip_filename)))
-                print(f"Zip file '{os.path.basename(zip_filename)}' copied to {target_path}.")
-                print(f"File compression and copy operation completed.")
-            except PermissionError:
-                print(f"Permission error: The file '{os.path.basename(zip_filename)}' is being used by another process.")
-                print(f"Permission error: The file '{os.path.basename(zip_filename)}' is being used by another process.")
+                # 압축 없이 복사만
+                if os.path.isfile(source_path):
+                    if os.path.isdir(target_path):
+                        shutil.copy(source_path, os.path.join(target_path, os.path.basename(source_path)))
+                    else:
+                        self.finished.emit("Destination must be a folder.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 0.0)
+                        return
+                elif os.path.isdir(source_path):
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    dst_folder = os.path.join(target_path, os.path.basename(source_path))
+                    dst_folder += f'_{timestamp}'
+                    if not os.path.exists(dst_folder):
+                        shutil.copytree(source_path, dst_folder)
+                    else:
+                        self.finished.emit("Folder already exists at the destination.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 0.0)
+                        return
+                else:
+                    self.finished.emit("Invalid source selected.", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 0.0)
+                    return
+            
+                # 작업 완료 시간 기록
+                end_time = time.time()
+                elapsed_time = end_time - start_time
+                self.finished.emit("Success", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), elapsed_time)
             except Exception as e:
-                print(f"An error occurred during copying: {str(e)}")
-                print("An error occurred during copying.")
-
-            print(f"File compression and copy operation completed.")
-        except Exception as e:
-            print(f"An error occurred during copying: {str(e)}")            
-        
-        '''
-        # 압축 없이 복사만
-        if os.path.isfile(source_path):
-            if os.path.isfile(target_path) :
-                shutil.copy(source_path , target_path)
-            else:
-                QMessageBox.warning(self, "Warning", "Destination must be a folder.")
-        elif os.path.isdir(source_path):
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            dst_folder = os.path.join(target_path , os.path.basename(source_path))
-            dst_folder += f'_{timestamp}'
-            #datetime.now().strftime("%Y%m%d_%H%M%S")
-            if not os.path.exists(dst_folder):
-                shutil.copytree(source_path , dst_folder)
-            else:
-                QMessageBox.warning(self, "Warning", "Folder already exists at the destination.")
-        else:
-            QMessageBox.warning(self, "Warning", "Invalid source selected.")
-        print("Success")
-        
+                print(f"파일 복사 실패: {source_path} -> {target_path}, 오류: {e}")
+                # 작업 완료 시간 기록
+                end_time = time.time()
+                elapsed_time = end_time - start_time
+                self.finished.emit("Fail", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), elapsed_time)
+            
+            self.file_queue.task_done()
         
     def get_drives(self):
         """ Get available drives in the system """
