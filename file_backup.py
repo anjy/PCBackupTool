@@ -296,7 +296,8 @@ class WindowClass(QMainWindow, form_class) :
                 
                 # 매시간 분 비교
                 if current_minute == setting_minute:
-                    self.copy_item(setting_source_dir,setting_target_dir)
+                    #self.copy_item(setting_source_dir,setting_target_dir)
+                    self.copy_schedule(setting_source_dir,setting_target_dir)
                     print(f"Every Hour Match Found: {setting['time']}")
                 else:
                     print("Hour Not Matched")
@@ -306,7 +307,8 @@ class WindowClass(QMainWindow, form_class) :
                 
                 # 매일 시:분 비교
                 if current_hour_minute == setting_hour_minute:
-                    self.copy_item(setting_source_dir,setting_target_dir)
+                    #self.copy_item(setting_source_dir,setting_target_dir)
+                    self.copy_schedule(setting_source_dir,setting_target_dir)
                     print(f"Every Day Match Found: {setting['time']}")
                 else:
                     print("Day Not Matched")
@@ -314,21 +316,44 @@ class WindowClass(QMainWindow, form_class) :
             elif "Week" in setting["Type1"]:
                 # 매주 특정 요일과 시:분 비교
                 if current_weekday == setting_day and current_hour_minute == setting_hour_minute:
-                    self.copy_item(setting_source_dir,setting_target_dir)
+                    #self.copy_item(setting_source_dir,setting_target_dir)
+                    self.copy_schedule(setting_source_dir,setting_target_dir)
                     print(f"Every Week Match Found on {setting_day}: {setting['time']}")
                 else:
                     print("Week Not Matched")
             else:
                 print('Not Matched Schedule')
-                  
+
+    # backup by schedule
+    def copy_schedule(self,setting_source_dir,setting_target_dir):
+        source_dir = setting_source_dir
+        target_dir = setting_target_dir
+        
+        if self.threads:
+            self.progress.disconnect(self.update_log)
+            self.finished.disconnect(self.on_finished)
+
+        # start thread
+        self.start_threads()
+       
+        self.progress.connect(self.update_log)
+        self.finished.connect(self.on_finished)
+
+        # 큐에 작업 추가
+        self.file_queue.put((source_dir, target_dir))
+        print('작업이 큐에 추가되었습니다.')
+        
+        self.file_queue.join()
+        print('모든 큐 작업이 완료되었습니다.')              
     # 창을 정상 크기로 복원
     def on_tray_icon_activated(self, reason):
         """ Handle tray icon activation event """
-        if reason == QSystemTrayIcon.Trigger:
-            self.showNormal()  
+        #if reason == QSystemTrayIcon.Trigger:
+        #    self.showNormal()  
             
     def closeEvent(self, event):
         """ Override close event to hide the window instead of closing it """
+        '''
         event.ignore()
         self.hide()
         self.tray_icon.showMessage(
@@ -337,7 +362,9 @@ class WindowClass(QMainWindow, form_class) :
             QSystemTrayIcon.Information,
             2000
         )  
+        '''
 
+    # LOG update
     def update_log(self, message, timestamp):
         self.model_log.appendRow([
             QStandardItem(timestamp),
@@ -346,13 +373,12 @@ class WindowClass(QMainWindow, form_class) :
         ])
         # 자동으로 마지막 행으로 스크롤
         self.tableView_log.scrollToBottom()
-        # clear log
+    # clear log
     def clear_log(self):
         self.model_log.removeRows(0,self.model_log.rowCount())
 
+    # end Log
     def on_finished(self, message, timestamp, elapsed_time):
-        print('######')
-        #self.model_log.clear()
         self.model_log.appendRow([
             QStandardItem(timestamp),
             QStandardItem(message),
@@ -363,7 +389,7 @@ class WindowClass(QMainWindow, form_class) :
     # start thread
     def start_threads(self):
        
-        print('Thread 시작')
+        print('Start Thread')
         self.threds = []
         for i in range(self.num_worker_threads):
             t = threading.Thread(target=self.copy_item)
@@ -376,14 +402,16 @@ class WindowClass(QMainWindow, form_class) :
 
     # stop thread
     def stop_threds(self):
-        # 작업자 스레드 종료
+        # reset file queue 
         for i in range(self.num_worker_threads):
             self.file_queue.put(None)
+        
+        # wait thread
         for t in self.threads:
             t.join()
         
         
-        print('모든 작업자 스레드가 종료되었습니다.')        
+        print('End thread ')        
 
     # event : Backup now 
     def copy_now(self):
@@ -411,12 +439,10 @@ class WindowClass(QMainWindow, form_class) :
 
         # 큐에 작업 추가
         self.file_queue.put((source_dir, target_dir))
-        print('작업이 큐에 추가되었습니다.')
+        print('add job in queue')
         
         self.file_queue.join()
-        print('모든 큐 작업이 완료되었습니다.')
-
-        #self.copy_item(source_dir , target_dir)
+        print('end job in queue')
 
         # stop thread
         self.stop_threds()
@@ -424,8 +450,6 @@ class WindowClass(QMainWindow, form_class) :
 
 
     # 파일 백업         
-   
-    
     def copy_item(self):
         
         # 작업 시작 시간 기록
@@ -471,13 +495,16 @@ class WindowClass(QMainWindow, form_class) :
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 self.finished.emit("Success", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), elapsed_time)
+                #start_time = time.time()
             except Exception as e:
                 print(f"파일 복사 실패: {source_path} -> {target_path}, 오류: {e}")
                 # 작업 완료 시간 기록
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 self.finished.emit("Fail", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), elapsed_time)
-            
+            finally:
+                start_time = time.time()
+
             self.file_queue.task_done()
         
     def get_drives(self):
