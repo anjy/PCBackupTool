@@ -108,6 +108,10 @@ class WindowClass(QMainWindow, form_class) :
         # New Dir
         self.btn_create_dir.clicked.connect(self.add_folder)
         
+        # clear log
+        self.btn_clear_log.clicked.connect(self.clear_log)
+
+
         # 트레이아이콘
         # System Tray
         self.tray_icon = QSystemTrayIcon(self)
@@ -342,8 +346,13 @@ class WindowClass(QMainWindow, form_class) :
         ])
         # 자동으로 마지막 행으로 스크롤
         self.tableView_log.scrollToBottom()
+        # clear log
+    def clear_log(self):
+        self.model_log.removeRows(0,self.model_log.rowCount())
 
     def on_finished(self, message, timestamp, elapsed_time):
+        print('######')
+        #self.model_log.clear()
         self.model_log.appendRow([
             QStandardItem(timestamp),
             QStandardItem(message),
@@ -353,13 +362,15 @@ class WindowClass(QMainWindow, form_class) :
 
     # start thread
     def start_threads(self):
+       
+        print('Thread 시작')
         self.threds = []
         for i in range(self.num_worker_threads):
             t = threading.Thread(target=self.copy_item)
             t.start()
             self.threads.append(t)  
-        self.progress.connect(self.update_log)
-        self.finished.connect(self.on_finished)
+        
+       
         self.btn_copy.setEnabled(False)
         print(' 스레드가 시작되었습니다.')  
 
@@ -370,6 +381,8 @@ class WindowClass(QMainWindow, form_class) :
             self.file_queue.put(None)
         for t in self.threads:
             t.join()
+        
+        
         print('모든 작업자 스레드가 종료되었습니다.')        
 
     # event : Backup now 
@@ -385,10 +398,17 @@ class WindowClass(QMainWindow, form_class) :
         source_dir = self.model_tgt.filePath(source_index)
         target_dir = self.model_tgt.filePath(target_index)
 
-        
+  
+        if self.threads:
+            self.progress.disconnect(self.update_log)
+            self.finished.disconnect(self.on_finished)
+
         # start thread
         self.start_threads()
        
+        self.progress.connect(self.update_log)
+        self.finished.connect(self.on_finished)
+
         # 큐에 작업 추가
         self.file_queue.put((source_dir, target_dir))
         print('작업이 큐에 추가되었습니다.')
@@ -401,10 +421,7 @@ class WindowClass(QMainWindow, form_class) :
         # stop thread
         self.stop_threds()
         
-    def show_warning(self, message):
-        def _show():
-            QMessageBox.warning(self, "Warning", message)
-        QApplication.instance().postEvent(self, _show)
+
 
     # 파일 백업         
    
@@ -413,7 +430,7 @@ class WindowClass(QMainWindow, form_class) :
         
         # 작업 시작 시간 기록
         start_time = time.time()
-        self.progress.emit("백업 중...", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        #self.progress.emit("백업 중...", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         while True:
             item = self.file_queue.get()
@@ -450,6 +467,7 @@ class WindowClass(QMainWindow, form_class) :
                     return
             
                 # 작업 완료 시간 기록
+                
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 self.finished.emit("Success", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), elapsed_time)
@@ -670,6 +688,7 @@ class WindowClass(QMainWindow, form_class) :
         self.timer.stop()
         event.accept()    
             
+
 
 # Pandas 데이터 모델
 class PandasModel(QAbstractTableModel):

@@ -400,7 +400,7 @@
     </attribute>
    </widget>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="btn_clear_log">
    <property name="geometry">
     <rect>
      <x>684</x>
@@ -410,7 +410,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Delete Log</string>
+    <string>Clear Log</string>
    </property>
   </widget>
  </widget>
