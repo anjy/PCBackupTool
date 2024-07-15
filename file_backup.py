@@ -363,7 +363,7 @@ class WindowClass(QMainWindow, form_class) :
             2000
         )  
         '''
-
+  
     # LOG update
     def update_log(self, message, timestamp):
         self.model_log.appendRow([
@@ -595,13 +595,59 @@ class WindowClass(QMainWindow, form_class) :
                     "Source Path":save_src_dir,
                     "Target Path":save_tgt_dir,
                    }
-        # 중복입력 체크 : TODO Type1 별로 나눠야됨
-        '''
-        for valid in data:
-            if valid['Type1'] == type1 and valid['Type2'] == type2  and valid['time'] == save_time and valid['Source Path'] == save_src_dir and valid['Target Path'] == save_tgt_dir :
-                return False
-        '''    
+       
+        # Time format
+        time_format = "%H:%M:00"
 
+        # 중복입력 체크 : TODO Type1 별로 나눠야됨
+        for valid in data["settings"]:
+            # Every Hour : 동일 time 불가(백업 폴더가 달라도)
+            if 'Hour' in type1 :
+                
+                save_time_obj = datetime.strptime(save_time, time_format)
+                valid_time_obj = datetime.strptime(valid['time'], time_format)
+              
+                if save_time_obj == valid_time_obj:
+                    QMessageBox.warning(self, "Same time", "You cannot select the same time.")
+                    return
+                   
+            # Every Day
+            elif 'Day' in type1 :
+                
+                save_time_obj = datetime.strptime(save_time, time_format)
+                valid_time_obj = datetime.strptime(valid['time'], time_format)
+                
+                if save_time_obj.minute == valid_time_obj.minute:
+                    QMessageBox.warning(self, "Same time", f"You cannot select the same time.({save_time_obj.minute} minute)")
+                    return 
+                
+            # Every Week 
+            elif 'Week' in type1:
+                save_time_obj = datetime.strptime(save_time, time_format)
+                valid_time_obj = datetime.strptime(valid['time'], time_format)
+
+                # 저장된 타입2(요일) 같을경우 시간동일& 분 동일 이면 불가
+                if type2 == valid["Type2"]:
+                    # 같은요일에 시분 동일
+                    if save_time_obj.hour == valid_time_obj.hour :
+                        # 분 동일 : 불가
+                        if save_time_obj.minute == valid_time_obj.minute:
+                            QMessageBox.warning(self, "Same time", f"You cannot select the same time.({save_time_obj.minute} minute)")
+                            return 
+                    else:
+                        # 같은 요일이고 시간이 다를 경우 : 
+                        if 'Hour' in valid['Type1'] or  'Day' in valid['Type1']:
+                            if save_time_obj.minute == valid_time_obj.minute:
+                                QMessageBox.warning(self, "Same time", f"You cannot select the same time.({save_time_obj.minute} minute)")
+                                return
+                # 같은 요일이 아닌 경우 : Hour / Day 
+                else:
+                     # 저장된 데이타에서 분이 동일 하면 안됨
+                    if 'Hour' in valid['Type1'] or  'Day' in valid['Type1']:
+                        if save_time_obj.minute == valid_time_obj.minute:
+                            QMessageBox.warning(self, "Same time", f"You cannot select the same time.({save_time_obj.minute} minute)")
+                            return 
+                  
         # "settings" 키에 새로운 항목 추가
         data["settings"].append(new_entry)
         
