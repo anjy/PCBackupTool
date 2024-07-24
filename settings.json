@@ -3,14 +3,7 @@
         {
             "Type1": "Every Hour",
             "Type2": "",
-            "time": "00:26:00",
-            "Source Path": "C:/sqldeveloper-22.2.1.234.1810-x64.zip",
-            "Target Path": "D:/_백업"
-        },
-        {
-            "Type1": "Every Week",
-            "Type2": "Mon",
-            "time": "00:27:00",
+            "time": "00:35:00",
             "Source Path": "C:/sqldeveloper-22.2.1.234.1810-x64.zip",
             "Target Path": "D:/_백업"
         }

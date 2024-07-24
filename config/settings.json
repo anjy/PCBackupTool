@@ -1,0 +1,11 @@
+{
+    "settings": [
+        {
+            "Type1": "Every Hour",
+            "Type2": "",
+            "time": "00:00:00",
+            "Source Path": "C:/pythonPjt",
+            "Target Path": "D:/_백업"
+        }
+    ]
+}

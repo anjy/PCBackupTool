@@ -50,7 +50,7 @@ class WindowClass(QMainWindow, form_class) :
         self.num_worker_threads = 2
 
         
-        self.settings_file = "settings.json"
+        self.settings_file = "config/settings.json"
         self.comb_1.addItems(["Select","Every Hour","Every Day","Every Week"])
         self.comb_2.addItems(["Sun","Mon","Tue","Wed","Thu","Fri","Sat"])
         
