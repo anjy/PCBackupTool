@@ -6,6 +6,13 @@
             "time": "00:00:00",
             "Source Path": "C:/pythonPjt",
             "Target Path": "D:/_백업"
+        },
+        {
+            "Type1": "Every Day",
+            "Type2": "",
+            "time": "01:01:00",
+            "Source Path": "C:/pythonPjt",
+            "Target Path": "D:/_백업"
         }
     ]
 }

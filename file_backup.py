@@ -26,6 +26,8 @@ from bs4 import BeautifulSoup
 from PyQt5.QtWidgets  import QApplication , QMainWindow , QVBoxLayout , QWidget , QPushButton, QFileDialog, QTableWidget, QTableWidgetItem 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QAbstractTableModel, Qt , QThread , pyqtSignal
+from pandas_model import PandasModel
+
 #UI파일 연결
 #단, UI파일은 Python 코드 파일과 같은 디렉토리에 위치해야한다.
 form_class = uic.loadUiType("file_backup.ui")[0]
@@ -761,44 +763,6 @@ class WindowClass(QMainWindow, form_class) :
         self.timer.stop()
         event.accept()    
             
-
-
-# Pandas 데이터 모델
-class PandasModel(QAbstractTableModel):
-    def __init__(self, data):
-        QAbstractTableModel.__init__(self)
-        self._data = data
-       
-
-    def rowCount(self, parent=None):
-        return self._data.shape[0]
-
-    def columnCount(self, parent=None):
-        return self._data.shape[1] + 1
-
-    def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid():
-            return None
-        if role == Qt.DisplayRole:
-            if index.column() < self._data.shape[1]:
-                return str(self._data.iat[index.row(), index.column()])
-        return None
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            if orientation == Qt.Horizontal:
-                if section < self._data.shape[1]:
-                    return str(self._data.columns[section])
-                elif section == self._data.shape[1]:
-                    return "Action"
-            elif orientation == Qt.Vertical:
-                return str(section)
-        return None
-
-    def flags(self, index):
-        if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemFlags(QAbstractTableModel.flags(self, index))
 
 
 if __name__ == "__main__" :
